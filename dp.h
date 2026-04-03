@@ -25,9 +25,6 @@ pthread_mutex_t mutex_rand;
 //position of next random number 
 int rand_position;
 
-
-
-
 // the state of each philosopher (THINKING, HUNGRY, EATING)
 enum {THINKING, HUNGRY, EATING} state[NUMBER];
 
