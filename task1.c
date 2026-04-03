@@ -9,7 +9,7 @@
 //function for the philosopher to pickup the chopsticks
 void pickup_chopsticks(int number){
     state[number] = HUNGRY;
-    printf("                thread %d\n",*p_num); //hungry
+    printf("                thread %d\n",number); //hungry
     bool eating = false;
     while(!eating){
       //printf("thread %d waiting\n", number);
@@ -85,7 +85,7 @@ void *philosopher(void* param){
   }
   
   
-  printf("hallo\n");
+  printf("%d done\n", *p_num);
 
 }
 
