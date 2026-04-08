@@ -4,9 +4,9 @@
   Date:    3 April 2026
   Description:   This file implements the
                  functionality required for
-                 Project 2, Task 1.
-  Compile with:  gcc -o task1 task1.c
-  Run with:      ./task1 sample1.out
+                 Project 2, Task 2.
+  Compile with:  gcc -o task2 task2.c
+  Run with:      ./task2 sample1.out
                  (or sample2.out)
 
 */
