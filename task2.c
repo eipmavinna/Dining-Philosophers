@@ -4,7 +4,7 @@
   Date:    3 April 2026
   Description:   This file implements the
                  functionality required for
-                 Project 2, Task 2.
+                 Project 2, Task 1.
   Compile with:  gcc -o task1 task1.c
   Run with:      ./task1 sample1.out
                  (or sample2.out)
@@ -18,7 +18,6 @@
 #include <stdbool.h>
 #include <math.h>
 #include <string.h>
-
 #include "dp.h"
 
 
@@ -36,25 +35,38 @@ int get_next_number(){
 }
 
 
-//need a way to tell which chopstick was taken (could be middle)
-
 //waits for both chopsticks to be available, then changes state to EATING and decrements neighbors' semaphores
-void pickup_chopsticks(int number){
+int pickup_chopsticks(int number){
     state[number] = HUNGRY;
     printf("                thread %d\n",number); //hungry
     
-    bool eating = false;
-    while(!eating){
+    while(true){
       sem_wait(&sem_vars[number]); //one signal from either side should allow this code to progress
       
       //once the sem value is greater than 0, check if both neighbors are not eating. If one is, go back to waiting
       pthread_mutex_lock(&mutex_lock);
-      if(state[(number+1)%NUMBER]!= EATING && state[(number - 1 + NUMBER) % NUMBER] != EATING){
+      if (state[(number+1)%NUMBER]!= EATING && state[(number - 1 + NUMBER) % NUMBER] != EATING) {
         //if it's safe to eat, change state and decrement semaphore values on either side
         state[number] = EATING;
         sem_trywait(&sem_vars[(number+1)%NUMBER]);
         sem_trywait(&sem_vars[(number - 1 + NUMBER) % NUMBER]);
-        eating = true;
+        pthread_mutex_unlock(&mutex_lock);
+        return 0;
+      }
+      if (state[(number+1)%NUMBER]!= EATING && !middleStickUsed) {
+        state[number] = EATING;
+        sem_trywait(&sem_vars[(number+1)%NUMBER]);
+        middleStickUsed = true;
+        pthread_mutex_unlock(&mutex_lock);
+        return 1;
+      }
+      if (!middleStickUsed && state[(number - 1 + NUMBER) % NUMBER] != EATING) {
+        //if it's safe to eat, change state and decrement semaphore values on either side
+        state[number] = EATING;
+        middleStickUsed = true;
+        sem_trywait(&sem_vars[(number - 1 + NUMBER) % NUMBER]);
+        pthread_mutex_unlock(&mutex_lock);
+        return 2;
       }
       pthread_mutex_unlock(&mutex_lock);
     }
@@ -64,11 +76,23 @@ void pickup_chopsticks(int number){
 
 
 //changes state, signals neighbors' semaphores
-void return_chopsticks(int number){
+void return_chopsticks(int number, int pickupType){
   pthread_mutex_lock(&mutex_lock);
   state[number] = THINKING;
-  sem_post(&sem_vars[(number+1)%NUMBER]); //signal the left and the right 
-  sem_post(&sem_vars[(number - 1 + NUMBER) % NUMBER]);
+
+  switch(pickupType) {
+    case 0:
+      sem_post(&sem_vars[(number+1)%NUMBER]); //signal the left and the right 
+      sem_post(&sem_vars[(number - 1 + NUMBER) % NUMBER]);
+    case 1:
+      sem_post(&sem_vars[(number+1)%NUMBER]); //signal the left and the middle 
+      middleStickUsed = false;
+    case 2:
+      middleStickUsed = false; //signal the middle and the right 
+      sem_post(&sem_vars[(number - 1 + NUMBER) % NUMBER]);
+  }
+
+
   sem_post(&sem_vars[number]); //reset the philosopher's own semaphore
   pthread_mutex_unlock(&mutex_lock);
 }
@@ -86,7 +110,7 @@ void *philosopher(void* param){
     sleep(get_next_number());
     
     //change state to hungry, try to pick up the two chopsticks next to it
-    pickup_chopsticks(*p_num);
+    int pickupType = pickup_chopsticks(*p_num);
     
     //in eating state
     printf("                                 thread %d\n",*p_num); //eating
@@ -94,7 +118,7 @@ void *philosopher(void* param){
     sleep(get_next_number());
     
     //finish eating, change state to thinking again
-    return_chopsticks(*p_num);
+    return_chopsticks(*p_num, pickupType);
     
     
   }

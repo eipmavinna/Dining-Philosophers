@@ -6,6 +6,7 @@
 #include <semaphore.h>  
 #include <stdlib.h>
 #include <unistd.h>
+#include <stdbool.h>
 
 // the number of philosophers
 #define NUMBER 		5
@@ -27,6 +28,7 @@ int rand_position;
 
 // the state of each philosopher (THINKING, HUNGRY, EATING)
 enum {THINKING, HUNGRY, EATING} state[NUMBER];
+bool middleStickUsed = false;
 
 // the id of each philosopher (0 .. NUMBER - 1)
 int thread_id[NUMBER];
@@ -39,10 +41,10 @@ pthread_mutex_t 	mutex_lock;
 void *philosopher(void *param);
 
 //function for the philosopher to pickup the chopsticks
-void pickup_chopsticks(int number);
+int pickup_chopsticks(int number);
 
 //function for the philosopher to return the chopsticks
-void return_chopsticks(int number);
+void return_chopsticks(int number, int pickupType);
 
 
 
