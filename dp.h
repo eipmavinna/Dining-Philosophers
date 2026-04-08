@@ -9,7 +9,7 @@
 #include <stdbool.h>
 
 // the number of philosophers
-#define NUMBER 		5
+#define NUMBER 		10
 
 // the maximum number of random numbers
 #define MAX_LENGTH 500
@@ -28,6 +28,8 @@ int rand_position;
 
 // the state of each philosopher (THINKING, HUNGRY, EATING)
 enum {THINKING, HUNGRY, EATING} state[NUMBER];
+
+//boolean representing the state of the middle chopstick for task 2
 bool middleStickUsed = false;
 
 // the id of each philosopher (0 .. NUMBER - 1)
