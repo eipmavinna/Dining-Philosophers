@@ -18,6 +18,7 @@
 #include <stdbool.h>
 #include <math.h>
 #include <string.h>
+#include <sys/time.h>
 #include "dp.h"
 
 
@@ -37,6 +38,9 @@ int get_next_number(){
 
 //waits for both chopsticks to be available, then changes state to EATING and decrements neighbors' semaphores
 int pickup_chopsticks(int number){
+    struct timeval startTime, endTime;
+    double waitTime;
+    gettimeofday(&startTime, NULL);
     state[number] = HUNGRY;
     printf("                thread %d\n",number); //hungry
     
@@ -47,6 +51,11 @@ int pickup_chopsticks(int number){
       pthread_mutex_lock(&mutex_lock);
       if (state[(number+1)%NUMBER]!= EATING && state[(number - 1 + NUMBER) % NUMBER] != EATING) {
         //if it's safe to eat, change state and decrement semaphore values on either side
+        gettimeofday(&endTime, NULL);
+        waitTime = (double)(endTime.tv_usec - startTime.tv_usec)/1000 + (double)(endTime.tv_sec - startTime.tv_sec)*1000;
+        if (waitTime > maxWaitTime) maxWaitTime = waitTime;
+        averageWaitTime += waitTime;
+
         state[number] = EATING;
         sem_trywait(&sem_vars[(number+1)%NUMBER]);
         sem_trywait(&sem_vars[(number - 1 + NUMBER) % NUMBER]);
@@ -54,6 +63,11 @@ int pickup_chopsticks(int number){
         return 0;
       }
       if (state[(number+1)%NUMBER]!= EATING && !middleStickUsed) {
+        gettimeofday(&endTime, NULL);
+        waitTime = (double)(endTime.tv_usec - startTime.tv_usec)/1000 + (double)(endTime.tv_sec - startTime.tv_sec)*1000;
+        if (waitTime > maxWaitTime) maxWaitTime = waitTime;
+        averageWaitTime += waitTime;
+
         state[number] = EATING;
         sem_trywait(&sem_vars[(number+1)%NUMBER]);
         middleStickUsed = true;
@@ -62,6 +76,11 @@ int pickup_chopsticks(int number){
       }
       if (!middleStickUsed && state[(number - 1 + NUMBER) % NUMBER] != EATING) {
         //if it's safe to eat, change state and decrement semaphore values on either side
+        gettimeofday(&endTime, NULL);
+        waitTime = (double)(endTime.tv_usec - startTime.tv_usec)/1000 + (double)(endTime.tv_sec - startTime.tv_sec)*1000;
+        if (waitTime > maxWaitTime) maxWaitTime = waitTime;
+        averageWaitTime += waitTime;
+
         state[number] = EATING;
         middleStickUsed = true;
         sem_trywait(&sem_vars[(number - 1 + NUMBER) % NUMBER]);
@@ -178,8 +197,15 @@ int main(int argc, char *argv[]){
   
   
   for(int i=0; i < NUMBER; i++){
-   pthread_join(threads[i],NULL); //wait for threads to exit
-   }
+    pthread_join(threads[i],NULL); //wait for threads to exit
+  }
+
+  pthread_mutex_lock(&mutex_lock);
+  averageWaitTime = averageWaitTime/(NUMBER*5);
+  pthread_mutex_unlock(&mutex_lock);
+
+  printf("Average Waiting Time: %f\n", averageWaitTime);
+  printf("Maximum Waiting Time: %f\n", maxWaitTime);
   
   
   return 0;

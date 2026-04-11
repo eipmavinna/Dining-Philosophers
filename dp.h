@@ -48,6 +48,10 @@ int pickup_chopsticks(int number);
 //function for the philosopher to return the chopsticks
 void return_chopsticks(int number, int pickupType);
 
+// Times
+double averageWaitTime;
+double maxWaitTime;
+
 
 
 
